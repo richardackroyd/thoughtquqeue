@@ -1,12 +1,141 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button fill="clear" aria-label="Reset queue" (click)="confirmResetQueue()">
+        <ion-icon name="refresh-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" aria-label="Settings" (click)="openSettings()">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
     <ion-title>Thought Queue</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <div id="container" class="ion-padding">
-    <p>LIFO thought queue — get back to ground and celebrate when you finish.</p>
-    <p><small>See <code>design/requirements.md</code> for the full spec. Next: add list, input, swipe-to-complete, and fireworks.</small></p>
+  <div class="home ion-padding">
+    <div class="queue-wrap">
+      <ion-note class="helper" *ngIf="thoughts.length > 0">
+        Swipe left or tap the bin icon to remove.
+      </ion-note>
+
+      <ion-list *ngIf="thoughts.length > 0; else emptyState">
+        <ion-item-sliding *ngFor="let item of getDisplayThoughts()">
+          <ion-item [class.current-item]="isCurrent(item)">
+            <ion-label>
+              <h2>{{ item.text }}</h2>
+              <p>{{ item.createdAt | date : 'short' }}</p>
+            </ion-label>
+            <ion-button
+              slot="end"
+              fill="clear"
+              class="delete-button"
+              aria-label="Delete thought"
+              (click)="completeThought(item.id)"
+            >
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+          <ion-item-options side="end" class="swipe-delete-options" (ionSwipe)="completeThought(item.id)">
+            <ion-item-option class="swipe-delete-option" expandable="true" (click)="completeThought(item.id)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      </ion-list>
+
+      <ng-template #emptyState>
+        <div class="empty">
+          <div class="empty-ground-card" *ngIf="groundImageDataUrl">
+            <img [src]="groundImageDataUrl" alt="Grounded" />
+            <p class="empty-grounded-text">grounded</p>
+          </div>
+          <p>Your queue is clear. Add the first thought to set ground.</p>
+        </div>
+      </ng-template>
+    </div>
   </div>
 </ion-content>
+
+<ion-footer>
+  <ion-toolbar class="ground-toolbar">
+    <div class="ground-bar">
+      <div
+        *ngFor="let segment of groundSegments"
+        class="ground-segment"
+        [class]="getSegmentClass(segment)"
+        [class.segment-active]="segment === getDepthMarkerSegment()"
+        [class.segment-clickable]="segment === 1 && !!groundImageDataUrl"
+        (click)="segment === 1 ? openGroundImagePreview() : null"
+      >
+        <img
+          *ngIf="segment === 1 && groundImageDataUrl"
+          [src]="groundImageDataUrl"
+          alt="Ground picture"
+          class="ground-image"
+        />
+        <span *ngIf="segment === 1 && !groundImageDataUrl">🙂</span>
+      </div>
+    </div>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-item lines="none" class="input-row">
+      <ion-input
+        [(ngModel)]="newThought"
+        placeholder="Add a thought..."
+        clearInput="true"
+        enterkeyhint="send"
+        (keyup.enter)="addThought()"
+      ></ion-input>
+      <ion-button
+        slot="end"
+        shape="round"
+        fill="clear"
+        class="send-button"
+        aria-label="Send thought"
+        (click)="addThought()"
+      >
+        <ion-icon name="send"></ion-icon>
+      </ion-button>
+    </ion-item>
+  </ion-toolbar>
+</ion-footer>
+
+<input
+  #cameraInput
+  type="file"
+  accept="image/*"
+  capture="environment"
+  hidden
+  (change)="onGroundImageSelected($event)"
+/>
+<input
+  #galleryInput
+  type="file"
+  accept="image/*"
+  hidden
+  (change)="onGroundImageSelected($event)"
+/>
+
+<ion-modal [isOpen]="isGroundImageModalOpen" (didDismiss)="closeGroundImagePreview()">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Ground picture</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="closeGroundImagePreview()">Close</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <img
+        *ngIf="groundImageDataUrl"
+        [src]="groundImageDataUrl"
+        alt="Ground picture large preview"
+        class="ground-image-preview"
+      />
+    </ion-content>
+  </ng-template>
+</ion-modal>

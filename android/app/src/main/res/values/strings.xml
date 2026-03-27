@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Thought Queue</string>
+    <string name="title_activity_main">Thought Queue</string>
+    <string name="package_name">com.rich.thoughtqueue</string>
+    <string name="custom_url_scheme">com.rich.thoughtqueue</string>
+</resources>
